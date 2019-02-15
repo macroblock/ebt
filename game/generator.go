@@ -5,6 +5,11 @@ import (
 	"math/rand"
 )
 
+// CorridorID -
+const (
+	CorridorID = 300
+)
+
 type (
 	// Room -
 	Room struct {
@@ -31,40 +36,45 @@ func Generate(minSize, maxSize Point2i, minRooms, maxRooms int) *Field {
 	id := 1
 	for i := 0; i < numRooms; i++ {
 		size := Random(Point2i{1, 1}, Point2i{7, 7})
-		if size.X == 4 {
-			size.X = 5
-		}
-		if size.Y == 4 {
-			size.Y = 5
-		}
+		// size = Point2i{3, 3}
 		pivot := size
 		pivot.DivInt(2, 2)
 		filter := NewCheckFilter(size, pivot)
 		for try := 0; try < 50; try++ {
-			pos := Random(Point2i{}, field.size)
+			maxPos := field.size
+			maxPos.SubInt(1, 1)
+			pos := Random(Point2i{1, 1}, maxPos)
 			// fmt.Printf("x, y: %v, %v\n", x, y)
 			if room, ok := NewRoom(field, pos, id, filter); ok {
 				rooms = append(rooms, room)
 
-				for i := 0; i < RandomInt(10, 30); i++ {
+				for i := 0; i < RandomInt(2, 15); i++ {
 					dir := rand.Intn(4)
 					for i := 0; i < 4; i++ {
 						d := (dir + i) % 4
-						// if room.canExtend(d) {
-						// 	room.Extend(d)
-						// 	break
-						// }
-						if room.Extend(d) {
+						if room.canExtend(d) {
+							room.Extend(d)
 							break
 						}
+						// if room.Extend(d) {
+						// 	break
+						// }
 					}
 				}
 
-				fmt.Printf("room %v: min %v, max %v size %v pivot %v\n", id, room.min, room.max, room.filter.size, room.filter.pivot)
+				fmt.Printf("room %v: min %v, max %v size %v pivot %v\n  center %v\n", id, room.min, room.max, room.filter.size, room.filter.pivot, room.Center())
 				id++
 				break
 			}
 		}
+	}
+
+	for i, nextRoom := range rooms[1:] {
+		currRoom := rooms[i]
+		p1 := currRoom.Center()
+		p2 := nextRoom.Center()
+
+		field.DrawLink(p1, p2, CorridorID)
 	}
 
 	// for _, room := range rooms[0 : len(rooms)-1] {
@@ -101,20 +111,33 @@ func Generate(minSize, maxSize Point2i, minRooms, maxRooms int) *Field {
 	// 	}
 	// }
 
+	grid := field.grid
+	for _, line := range grid {
+		for i := range line {
+			if line[i] >= 0 {
+				line[i] = CorridorID
+			}
+		}
+	}
+
 	return field
 }
 
 // NewRoom -
 func NewRoom(field *Field, pos Point2i, id int, filter *CheckFilter) (*Room, bool) {
-	if !filter.canSet(field, pos, id) {
+	p1, p2 := pos, pos
+	p1.SubInt(1, 1)
+	p2.AddInt(1, 1)
+	if !filter.canSetRegion(field, p1, p2, id) {
 		return nil, false
 	}
 	room := &Room{}
 	room.field = field
 	room.id = id
-	room.min = pos
-	room.max = pos
-	field.grid[pos.Y][pos.X] = id
+	room.min = p1
+	room.max = p2
+	// field.grid[pos.Y][pos.X] = id
+	field.FillRect(p1, p2, id)
 	room.filter = filter //NewCheckFilter(Point2i{3, 3}, Point2i{1, 1})
 	return room, true
 }
@@ -122,6 +145,13 @@ func NewRoom(field *Field, pos Point2i, id int, filter *CheckFilter) (*Room, boo
 // NewRoomInt -
 func NewRoomInt(field *Field, x, y int, id int, filter *CheckFilter) (*Room, bool) {
 	return NewRoom(field, Point2i{x, y}, id, filter)
+}
+
+// Center -
+func (o *Room) Center() Point2i {
+	pt := Diff(o.min, o.max)
+	pt.DivInt(2, 2).Add(o.min)
+	return pt
 }
 
 func (o *Room) initParamsForExtend(dir int) (start, offset Point2i, len int) {
@@ -156,7 +186,7 @@ func (o *Room) initParamsForExtend(dir int) (start, offset Point2i, len int) {
 func (o *Room) canExtend(dir int) bool {
 	pt, offs, len := o.initParamsForExtend(dir)
 	for i := 0; i < len; i++ {
-		if !o.filter.hasSelf(o.field, pt, o.id) || !o.filter.canSet(o.field, pt, o.id) {
+		if /*!o.filter.hasSelf(o.field, pt, o.id) ||*/ !o.filter.canSet(o.field, pt, o.id) {
 			return false
 		}
 		pt.Add(offs)
@@ -241,6 +271,17 @@ func (o *CheckFilter) canSet(field *Field, pos Point2i, id int) bool {
 
 func (o *CheckFilter) canSetInt(field *Field, x, y int, id int) bool {
 	return o.canSet(field, Point2i{x, y}, id)
+}
+
+func (o *CheckFilter) canSetRegion(field *Field, p1, p2 Point2i, id int) bool {
+	for j := p1.Y; j < p2.Y+1; j++ {
+		for i := p1.X; i < p2.X+1; i++ {
+			if !o.canSetInt(field, i, j, id) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (o *CheckFilter) canExtendHorLine(field *Field, pos Point2i, len int, id int) bool {
