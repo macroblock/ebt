@@ -14,11 +14,15 @@ type (
 	}
 )
 
+// NewPoint2i -
+func NewPoint2i(x, y int) Point2i {
+	return Point2i{x, y}
+}
+
 // Random -
 func Random(from, to Point2i) Point2i {
 	diff := Diff(from, to)
-	from.AddInt(rand.Intn(diff.X+1), rand.Intn(diff.Y+1))
-	return from
+	return from.AddInt(rand.Intn(diff.X+1), rand.Intn(diff.Y+1))
 }
 
 // RandomInt -
@@ -28,161 +32,142 @@ func RandomInt(from, to int) int {
 	return from
 }
 
-// Diff - calculates (pt2 - pt1)
-func Diff(pt1, pt2 Point2i) Point2i {
-	pt2.Sub(pt1)
-	return pt2
-}
-
-// Set -
-func (o *Point2i) Set(pt Point2i) *Point2i {
-	o.X = pt.X
-	o.Y = pt.Y
-	return o
-}
-
-// Add -
-func (o *Point2i) Add(pt Point2i) *Point2i {
-	o.X += pt.X
-	o.Y += pt.Y
-	return o
-}
-
-// Sub -
-func (o *Point2i) Sub(pt Point2i) *Point2i {
-	o.X -= pt.X
-	o.Y -= pt.Y
-	return o
-}
-
-// Mul -
-func (o *Point2i) Mul(pt Point2i) *Point2i {
-	o.X *= pt.X
-	o.Y *= pt.Y
-	return o
-}
-
-// Div -
-func (o *Point2i) Div(pt Point2i) *Point2i {
-	o.X /= pt.X
-	o.Y /= pt.Y
-	return o
-}
-
 // Min -
-func (o *Point2i) Min(pt Point2i) *Point2i {
-	o.X = misc.MinInt(pt.X, o.X)
-	o.Y = misc.MinInt(pt.Y, o.Y)
-	return o
+func Min(a, b Point2i) Point2i {
+	return Point2i{misc.MinInt(a.X, b.X), misc.MinInt(a.Y, b.Y)}
 }
 
 // Max -
-func (o *Point2i) Max(pt Point2i) *Point2i {
-	o.X = misc.MaxInt(pt.X, o.X)
-	o.Y = misc.MaxInt(pt.Y, o.Y)
-	return o
+func Max(a, b Point2i) Point2i {
+	return Point2i{misc.MaxInt(a.X, b.X), misc.MaxInt(a.Y, b.Y)}
 }
 
-// Volume -
-func (o *Point2i) Volume() int {
-	return o.X * o.Y
+// MinMax -
+func MinMax(a, b Point2i) (min Point2i, max Point2i) {
+	min = Min(a, b)
+	max = Max(a, b)
+	return
 }
 
 // LessThan -
-func (o *Point2i) LessThan(pt Point2i) bool {
-	if o.X >= pt.X {
+func LessThan(a, b Point2i) bool {
+	if a.X >= b.X {
 		return false
 	}
-	if o.Y >= pt.Y {
+	if a.Y >= b.Y {
 		return false
 	}
 	return true
 }
 
 // LessOrEqual -
-func (o *Point2i) LessOrEqual(pt Point2i) bool {
-	if o.X > pt.X {
+func LessOrEqual(a, b Point2i) bool {
+	if a.X > b.X {
 		return false
 	}
-	if o.Y > pt.Y {
+	if a.Y > b.Y {
 		return false
 	}
 	return true
 }
 
 // GreaterThan -
-func (o *Point2i) GreaterThan(pt Point2i) bool {
-	if o.X <= pt.X {
+func GreaterThan(a, b Point2i) bool {
+	if a.X <= b.X {
 		return false
 	}
-	if o.Y <= pt.Y {
+	if a.Y <= b.Y {
 		return false
 	}
 	return true
 }
 
 // GreaterOrEqual -
-func (o *Point2i) GreaterOrEqual(pt Point2i) bool {
-	if o.X < pt.X {
+func GreaterOrEqual(a, b Point2i) bool {
+	if a.X < b.X {
 		return false
 	}
-	if o.Y < pt.Y {
+	if a.Y < b.Y {
 		return false
 	}
 	return true
 }
 
-// SetInt -
-func (o *Point2i) SetInt(x, y int) *Point2i {
-	o.X = x
-	o.Y = y
+// Diff - calculates: max(pt1, pt2) - min(pt1, pt2)
+func Diff(a, b Point2i) Point2i {
+	return Max(a, b).Sub(Min(a, b))
+}
+
+// Set -
+func (o Point2i) Set(pt Point2i) Point2i {
+	o.X = pt.X
+	o.Y = pt.Y
 	return o
 }
 
+// Add -
+func (o Point2i) Add(pt Point2i) Point2i {
+	o.X += pt.X
+	o.Y += pt.Y
+	return o
+}
+
+// Sub -
+func (o Point2i) Sub(pt Point2i) Point2i {
+	o.X -= pt.X
+	o.Y -= pt.Y
+	return o
+}
+
+// Mul -
+func (o Point2i) Mul(pt Point2i) Point2i {
+	o.X *= pt.X
+	o.Y *= pt.Y
+	return o
+}
+
+// Div -
+func (o Point2i) Div(pt Point2i) Point2i {
+	o.X /= pt.X
+	o.Y /= pt.Y
+	return o
+}
+
+// Volume -
+func (o Point2i) Volume() int {
+	return o.X * o.Y
+}
+
 // AddInt -
-func (o *Point2i) AddInt(dx, dy int) *Point2i {
+func (o Point2i) AddInt(dx, dy int) Point2i {
 	o.X += dx
 	o.Y += dy
 	return o
 }
 
 // SubInt -
-func (o *Point2i) SubInt(dx, dy int) *Point2i {
+func (o Point2i) SubInt(dx, dy int) Point2i {
 	o.X -= dx
 	o.Y -= dy
 	return o
 }
 
 // MulInt -
-func (o *Point2i) MulInt(kx, ky int) *Point2i {
+func (o Point2i) MulInt(kx, ky int) Point2i {
 	o.X *= kx
 	o.Y *= ky
 	return o
 }
 
 // DivInt -
-func (o *Point2i) DivInt(kx, ky int) *Point2i {
+func (o Point2i) DivInt(kx, ky int) Point2i {
 	o.X /= kx
 	o.Y /= ky
 	return o
 }
 
-// MinInt -
-func (o *Point2i) MinInt(x, y int) *Point2i {
-	o.X = misc.MinInt(x, o.X)
-	o.Y = misc.MinInt(y, o.Y)
-	return o
-}
-
-// MaxInt -
-func (o *Point2i) MaxInt(x, y int) *Point2i {
-	o.X = misc.MaxInt(x, o.X)
-	o.Y = misc.MaxInt(y, o.Y)
-	return o
-}
-
 // Scale -
-func (o *Point2i) Scale(kx, ky float64) *Point2i {
+func (o Point2i) Scale(kx, ky float64) Point2i {
 	o.X = int(math.Round(kx * float64(o.X)))
 	o.Y = int(math.Round(ky * float64(o.Y)))
 	return o

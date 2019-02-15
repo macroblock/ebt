@@ -16,7 +16,7 @@ type Field struct {
 
 // NewField -
 func NewField(size Point2i) *Field {
-	size.MaxInt(minFieldSize, minFieldSize)
+	size = Max(size, Point2i{minFieldSize, minFieldSize})
 	grid := make([][]int, size.Y)
 	for j := range grid {
 		line := make([]int, size.X)

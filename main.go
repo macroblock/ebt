@@ -133,8 +133,7 @@ func init() {
 }
 
 func initField() *game.Field {
-	size := game.Point2i{}
-	size.SetInt(40, 40)
+	size := game.NewPoint2i(40, 40)
 	return game.Generate(size, size, 20, 20)
 }
 

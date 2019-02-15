@@ -37,13 +37,10 @@ func Generate(minSize, maxSize Point2i, minRooms, maxRooms int) *Field {
 	for i := 0; i < numRooms; i++ {
 		size := Random(Point2i{1, 1}, Point2i{7, 7})
 		// size = Point2i{3, 3}
-		pivot := size
-		pivot.DivInt(2, 2)
+		pivot := size.DivInt(2, 2)
 		filter := NewCheckFilter(size, pivot)
 		for try := 0; try < 50; try++ {
-			maxPos := field.size
-			maxPos.SubInt(1, 1)
-			pos := Random(Point2i{1, 1}, maxPos)
+			pos := Random(Point2i{1, 1}, field.size.SubInt(1, 1))
 			// fmt.Printf("x, y: %v, %v\n", x, y)
 			if room, ok := NewRoom(field, pos, id, filter); ok {
 				rooms = append(rooms, room)
@@ -125,19 +122,17 @@ func Generate(minSize, maxSize Point2i, minRooms, maxRooms int) *Field {
 
 // NewRoom -
 func NewRoom(field *Field, pos Point2i, id int, filter *CheckFilter) (*Room, bool) {
-	p1, p2 := pos, pos
-	p1.SubInt(1, 1)
-	p2.AddInt(1, 1)
-	if !filter.canSetRegion(field, p1, p2, id) {
+	pt1 := pos.SubInt(1, 1)
+	pt2 := pos.AddInt(1, 1)
+	if !filter.canSetRegion(field, pt1, pt2, id) {
 		return nil, false
 	}
 	room := &Room{}
 	room.field = field
 	room.id = id
-	room.min = p1
-	room.max = p2
+	room.min, room.max = MinMax(pt1, pt2)
 	// field.grid[pos.Y][pos.X] = id
-	field.FillRect(p1, p2, id)
+	field.FillRect(pt1, pt2, id)
 	room.filter = filter //NewCheckFilter(Point2i{3, 3}, Point2i{1, 1})
 	return room, true
 }
@@ -149,9 +144,7 @@ func NewRoomInt(field *Field, x, y int, id int, filter *CheckFilter) (*Room, boo
 
 // Center -
 func (o *Room) Center() Point2i {
-	pt := Diff(o.min, o.max)
-	pt.DivInt(2, 2).Add(o.min)
-	return pt
+	return Diff(o.min, o.max).DivInt(2, 2).Add(o.min)
 }
 
 func (o *Room) initParamsForExtend(dir int) (start, offset Point2i, len int) {
@@ -159,24 +152,20 @@ func (o *Room) initParamsForExtend(dir int) (start, offset Point2i, len int) {
 	default:
 		panic(fmt.Sprintf("unsupported dir value: %v", dir))
 	case 0:
-		start = o.min
-		start.AddInt(0, -1)
-		offset.SetInt(1, 0)
+		start = o.min.AddInt(0, -1)
+		offset = Point2i{1, 0}
 		len = Diff(o.min, o.max).X
 	case 2:
-		start = o.max
-		start.AddInt(0, 1)
-		offset.SetInt(-1, 0)
+		start = o.max.AddInt(0, 1)
+		offset = Point2i{-1, 0}
 		len = Diff(o.min, o.max).X
 	case 1:
-		start = o.max
-		start.AddInt(1, 0)
-		offset.SetInt(0, -1)
+		start = o.max.AddInt(1, 0)
+		offset = Point2i{0, -1}
 		len = Diff(o.min, o.max).Y
 	case 3:
-		start = o.min
-		start.AddInt(-1, 0)
-		offset.SetInt(0, 1)
+		start = o.min.AddInt(-1, 0)
+		offset = Point2i{0, 1}
 		len = Diff(o.min, o.max).Y
 	}
 	return start, offset, len + 1
@@ -189,7 +178,7 @@ func (o *Room) canExtend(dir int) bool {
 		if /*!o.filter.hasSelf(o.field, pt, o.id) ||*/ !o.filter.canSet(o.field, pt, o.id) {
 			return false
 		}
-		pt.Add(offs)
+		pt = pt.Add(offs)
 	}
 	return true
 }
@@ -205,13 +194,13 @@ func (o *Room) Extend(dir int) bool {
 			grid[pt.Y][pt.X] = o.id
 			extended = true
 		}
-		pt.Add(offs)
+		pt = pt.Add(offs)
 	}
 	if !extended {
 		return false
 	}
-	o.min.Min(start)
-	o.max.Max(start)
+	o.min = Min(o.min, start)
+	o.max = Max(o.max, start)
 	return true
 }
 
@@ -239,13 +228,12 @@ func (o *CheckFilter) hasSelf(field *Field, pos Point2i, id int) bool {
 }
 
 func (o *CheckFilter) canSet(field *Field, pos Point2i, id int) bool {
-	pt1, pt2 := pos, pos
-	pt1.Sub(o.pivot)
-	pt2.Add(o.size).Sub(o.pivot)
-	if !pt1.GreaterOrEqual(Point2i{}) {
+	pt1 := pos.Sub(o.pivot)
+	pt2 := pt1.Add(o.size)
+	if !GreaterOrEqual(pt1, Point2i{}) {
 		return false
 	}
-	if !pt2.LessOrEqual(field.size) {
+	if !LessOrEqual(pt2, field.size) {
 		return false
 	}
 	// ok := false
