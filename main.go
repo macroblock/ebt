@@ -22,12 +22,14 @@ import (
 	"image/color"
 	_ "image/png"
 	"log"
+	"time"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/macroblock/ebt/anim"
 	"github.com/macroblock/ebt/game"
 	"github.com/macroblock/garbage/utils"
 	"golang.org/x/image/font"
@@ -54,9 +56,15 @@ var (
 	normalFont font.Face
 	bigFont    font.Face
 
-	scale = 10.0
+	scale = 5.0
 	quads []*ebiten.Image
 	quad0 *ebiten.Image
+
+	spImage0, spImage1, spImage2 *ebiten.Image
+
+	tl0, tl1 *anim.Timeline
+
+	deltaTime func() time.Duration
 )
 
 func init() {
@@ -130,6 +138,25 @@ func init() {
 	// field = game.NewFieldInt(100, 100)
 	field = initField()
 	fmt.Printf("field size: %v\n", field.Size())
+}
+
+func init() {
+	spImage0, _ = ebiten.NewImage(2, 2, ebiten.FilterNearest)
+	spImage0.Fill(color.RGBA{50, 50, 255, 255})
+	spImage1, _ = ebiten.NewImage(2, 2, ebiten.FilterNearest)
+	spImage1.Fill(color.RGBA{50, 150, 50, 255})
+	spImage2, _ = ebiten.NewImage(2, 2, ebiten.FilterNearest)
+	spImage2.Fill(color.RGBA{255, 50, 50, 255})
+
+	tl0 = anim.NewTimeline("foreward", 1.0, spImage1,
+		[]anim.State{
+			anim.NewState(0.25, spImage0),
+			anim.NewState(0.50, spImage1),
+			anim.NewState(0.75, spImage2),
+		})
+	tl0.SetSpeed(2)
+
+	deltaTime = anim.DeltaTimeFunc()
 }
 
 func initField() *game.Field {
@@ -234,6 +261,12 @@ func update(screen *ebiten.Image) error {
 	// op.GeoM.Translate(x, y)
 	// screen.DrawImage(tiles[curTile], op)
 
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(8, 8)
+	op.GeoM.Translate(200, 50)
+	delta := deltaTime()
+	state := tl0.State(delta)
+	screen.DrawImage(state.Tile, op)
 	return nil
 }
 
