@@ -1,8 +1,6 @@
 package anim
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -81,16 +79,16 @@ func (o *Timeline) State(delta time.Duration) State {
 		o.time = o.time % o.duration //math.Remainder(o.time, o.duration)
 	}
 	ret := &o.initialState
-	str := "init"
+	// str := "init"
 	for i := range o.states {
 		state := &o.states[i]
 		if o.time < state.Time {
 			break
 		}
-		str = strconv.Itoa(i)
+		// str = strconv.Itoa(i)
 		ret = state
 	}
-	fmt.Println("state: ", str, "time ", o.time)
+	// fmt.Println("state: ", str, "time ", o.time)
 	return *ret
 }
 

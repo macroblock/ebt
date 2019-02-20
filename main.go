@@ -31,6 +31,7 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/macroblock/ebt/anim"
 	"github.com/macroblock/ebt/game"
+	"github.com/macroblock/ebt/interpolator"
 	"github.com/macroblock/garbage/utils"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
@@ -65,6 +66,10 @@ var (
 	tl0, tl1 *anim.Timeline
 
 	deltaTime func() time.Duration
+
+	interp   *interpolator.Interpolator
+	position int
+	rest     time.Duration
 )
 
 func init() {
@@ -138,6 +143,7 @@ func init() {
 	// field = game.NewFieldInt(100, 100)
 	field = initField()
 	fmt.Printf("field size: %v\n", field.Size())
+
 }
 
 func init() {
@@ -155,6 +161,8 @@ func init() {
 			anim.NewState(0.75, spImage2),
 		})
 	tl0.SetSpeed(2)
+
+	interp = interpolator.NewInterpolator(&position, time.Second, 100, 200)
 
 	deltaTime = anim.DeltaTimeFunc()
 }
@@ -261,12 +269,25 @@ func update(screen *ebiten.Image) error {
 	// op.GeoM.Translate(x, y)
 	// screen.DrawImage(tiles[curTile], op)
 
+	delta := deltaTime()
+	ok := false
+	rest, ok = interp.Process(delta)
+	if ok {
+		if position < 395 {
+			interp.Reset(&position, time.Second, 390, 400)
+		} else {
+			interp.Reset(&position, time.Second, 380, 390)
+		}
+		interp.Process(rest)
+	}
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(8, 8)
-	op.GeoM.Translate(200, 50)
-	delta := deltaTime()
-	state := tl0.State(delta)
+	fmt.Printf("pos: %v\n", position)
+	op.GeoM.Translate(float64(position), 50)
+	// state := tl0.State(delta)
+	state := tl0.State(0)
 	screen.DrawImage(state.Tile, op)
+
 	return nil
 }
 
